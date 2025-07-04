@@ -1,0 +1,107 @@
+<launch>
+  <!-- 全局参数配置 -->
+  <arg name="num_agents" default="3" />
+  <arg name="debug_mode" default="False"/>
+  <rosparam param="dx">[0.0, 14, 28]</rosparam> 
+  <rosparam param="dy">[0.0, 0.5, -14]</rosparam>
+  <rosparam param="cmd_vel_topic_table">["/robot1/cmd_vel", '/robot2/cmd_vel','/robot3/cmd_vel']</rosparam>
+
+  <!-- 机器人1配置 -->
+  <arg name="robot1_rgb_topic" default="/robot1/camera/color/image_raw/compressed" />
+  <arg name="robot1_depth_topic" default='/robot1/camera/aligned_depth_to_color/image_raw/compressedDepth' />
+  <arg name="robot1_tf_source" default="robot1/base_link" />
+  <arg name="robot1_tf_target" default="robot1/map" />
+  <arg name="robot1_window_size_x" default="20" />
+  <arg name="robot1_window_size_y" default="20" />
+  <arg name="robot1_window_size_yaw" default="20" />
+  
+  <!-- 机器人2配置 -->
+  <arg name="robot2_rgb_topic" default="/robot2/camera/rgb/image_rect_color/compressed" />
+  <arg name="robot2_depth_topic" default="/robot2/camera/depth/image_raw/compressedDepth" />
+  <arg name="robot2_tf_source" default="robot2/base_link" />
+  <arg name="robot2_tf_target" default="robot2/map" />
+  <arg name="robot2_window_size_x" default="20" />
+  <arg name="robot2_window_size_y" default="20" />
+  <arg name="robot2_window_size_yaw" default="20" />
+
+
+  <group ns="robot3">
+      <!-- 启动我们的位姿归一化节点 -->
+      <node pkg="explore2" type="pose_normalizer.py" name="pose_normalizer" output="screen">
+          <param name="tf_prefix" value="robot3" />
+          <param name="global_frame" value="robot3/map" /> <!-- 确保这里的map与你的SLAM输出的全局frame一致 -->
+      </node>
+
+      <!-- 启动你的主算法节点 -->
+      <!-- 确保主算法节点知道要去查询 'robot3/world_start' frame -->
+      <!-- ... -->
+  </group>
+
+    <!-- 机器人3配置 -->
+  <arg name="robot3_rgb_topic" default="/robot3/spark_camera/image_raw/compressed" />
+  <arg name="robot3_depth_topic" default="/robot3/spark_camera/depth/image_raw/compressedDepth" />
+  <arg name="robot3_tf_source" default="robot3/base_link" />
+  <arg name="robot3_tf_target" default="robot3/world_start" />
+  <arg name="robot3_window_size_x" default="20" />
+  <arg name="robot3_window_size_y" default="20" />
+  <arg name="robot3_window_size_yaw" default="20" />
+  
+  <!-- 机器人1节点 -->
+  <node name="mr600_collector" pkg="explore2" type="message_collector_syn.py">
+    <param name="robot_id" value="0" />
+    <param name="topic_config/rgb" value="$(arg robot1_rgb_topic)" />
+    <param name="topic_config/depth" value="$(arg robot1_depth_topic)" />
+    <param name="topic_config/rgb_type" value="CompressedImage" />
+    <param name="topic_config/depth_type" value="CompressedImage" />
+    <param name="tf_config/target_frame" value="$(arg robot1_tf_target)" />
+    <param name="tf_config/source_frame" value="$(arg robot1_tf_source)" />
+    <param name="filter_config/window_size_x" value="$(arg robot1_window_size_x)" />
+    <param name="filter_config/window_size_y" value="$(arg robot1_window_size_y)" />
+    <param name="filter_config/window_size_yaw" value="$(arg robot1_window_size_yaw)" />
+    <param name="filter_config/display_filter" value="false" />
+  </node>
+  
+  <!-- 机器人2节点 -->
+  <node name="petbot_collector" pkg="explore2" type="message_collector_syn.py">
+    <param name="robot_id" value="1" />
+    <param name="topic_config/rgb" value="$(arg robot2_rgb_topic)" />
+    <param name="topic_config/depth" value="$(arg robot2_depth_topic)" />
+    <param name="topic_config/rgb_type" value="CompressedImage" />
+    <param name="topic_config/depth_type" value="CompressedImage" />
+    <param name="tf_config/target_frame" value="$(arg robot2_tf_target)" />
+    <param name="tf_config/source_frame" value="$(arg robot2_tf_source)" />
+    <param name="filter_config/window_size_x" value="$(arg robot2_window_size_x)" />
+    <param name="filter_config/window_size_y" value="$(arg robot2_window_size_y)" />
+    <param name="filter_config/window_size_yaw" value="$(arg robot2_window_size_yaw)" />
+    <param name="filter_config/display_filter" value="false" />
+  </node>
+  
+  <!-- 机器人3节点 -->
+  <node name="spark_collector" pkg="explore2" type="message_collector_syn.py">
+    <param name="robot_id" value="2" />
+    <param name="topic_config/rgb" value="$(arg robot3_rgb_topic)" />
+    <param name="topic_config/depth" value="$(arg robot3_depth_topic)" />
+    <param name="topic_config/rgb_type" value="CompressedImage" />
+    <param name="topic_config/depth_type" value="CompressedImage" />
+    <param name="tf_config/target_frame" value="$(arg robot3_tf_target)" />
+    <param name="tf_config/source_frame" value="$(arg robot3_tf_source)" />
+    <param name="filter_config/window_size_x" value="$(arg robot3_window_size_x)" />
+    <param name="filter_config/window_size_y" value="$(arg robot3_window_size_y)" />
+    <param name="filter_config/window_size_yaw" value="$(arg robot3_window_size_yaw)" />
+    <param name="filter_config/display_filter" value="false" />
+  </node>
+  
+  <!-- 主节点 -->
+  <node name="main_node" pkg="explore2" type="mr_planning_2r_dyn.py" output="screen" required="true">
+    <param name="num_agents" value="$(arg num_agents)" />
+    <param name="debug" value="$(arg debug_mode)" />
+  </node>
+
+  <!-- <node name="rviz_spark" pkg="rviz" type="rviz" required="false" /> -->
+
+  <!-- <node name="rviz_mr600" pkg="rviz" type="rviz" args="-d $(find explore2)/rviz_config/mr600.rviz" required="false" /> -->
+  <!-- <node name="rviz_mr600" pkg="rviz" type="rviz" args="-d $(find explore2)/rviz_config/merged.rviz" required="false" /> -->
+  <!-- <node name="rviz_mr600" pkg="rviz" type="rviz" args="-d $(find explore2)/rviz_config/mr600.rviz" required="false" /> -->
+  <node name="rviz_petbot" pkg="rviz" type="rviz" args="-d $(find explore2)/rviz_config/petbot.rviz" required="false" />
+  
+</launch>

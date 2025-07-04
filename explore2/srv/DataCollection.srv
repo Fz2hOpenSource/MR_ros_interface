@@ -1,0 +1,13 @@
+# 请求部分
+bool start_collection  # 是否开始收集数据
+---
+# 响应部分
+bool success  # 操作是否成功
+string message  # 状态消息
+
+# 图像数据
+sensor_msgs/CompressedImage rgb_image  # 处理后的RGB图像
+sensor_msgs/Image depth_image  # 处理后的深度图像
+
+# 姿态数据
+geometry_msgs/Pose pose  # 处理后的姿态信息
